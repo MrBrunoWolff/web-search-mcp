@@ -26,8 +26,9 @@ export class BrowserPool {
     this.currentBrowserIndex++;
     this.lastUsedBrowserType = browserType;
 
-    if (this.browsers.has(browserType)) {
-      const browser = this.browsers.get(browserType)!;
+    const existingBrowser = this.browsers.get(browserType);
+    if (existingBrowser) {
+      const browser = existingBrowser;
       
       // Check if browser is still connected and healthy
       try {

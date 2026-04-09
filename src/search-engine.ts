@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import type { Browser, Page } from 'playwright';
 import { SearchOptions, SearchResult, SearchResultWithMetadata } from './types.js';
 import { generateTimestamp, sanitizeQuery } from './utils.js';
 import { RateLimiter } from './rate-limiter.js';
@@ -110,7 +111,9 @@ export class SearchEngine {
           data: error.response?.data?.substring(0, 500),
         });
       }
-      throw new Error(`Failed to perform search: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to perform search: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+        cause: error,
+      });
     }
   }
 
@@ -159,7 +162,7 @@ export class SearchEngine {
     throw new Error('All Brave search attempts failed');
   }
 
-  private async tryBrowserBraveSearchInternal(browser: any, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
+  private async tryBrowserBraveSearchInternal(browser: Browser, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
     // Validate browser is still functional before proceeding
     if (!browser.isConnected()) {
       throw new Error('Browser is not connected');
@@ -275,7 +278,7 @@ export class SearchEngine {
     throw new Error('All Bing search attempts failed');
   }
 
-  private async tryBrowserBingSearchInternal(browser: any, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
+  private async tryBrowserBingSearchInternal(browser: Browser, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
     const debugBing = process.env.DEBUG_BING_SEARCH === 'true';
     
     // Validate browser is still functional before proceeding
@@ -355,7 +358,7 @@ export class SearchEngine {
     }
   }
 
-  private async tryEnhancedBingSearch(page: any, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
+  private async tryEnhancedBingSearch(page: Page, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
     const debugBing = process.env.DEBUG_BING_SEARCH === 'true';
     console.error(`[SearchEngine] BING: Enhanced search - navigating to Bing homepage...`);
     
@@ -435,7 +438,7 @@ export class SearchEngine {
     return results;
   }
 
-  private async tryDirectBingSearch(page: any, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
+  private async tryDirectBingSearch(page: Page, query: string, numResults: number, timeout: number): Promise<SearchResult[]> {
     const debugBing = process.env.DEBUG_BING_SEARCH === 'true';
     console.error(`[SearchEngine] BING: Direct search with enhanced parameters...`);
     
@@ -779,7 +782,6 @@ export class SearchEngine {
   }
 
   private parseBingResults(html: string, maxResults: number): SearchResult[] {
-    const debugBing = process.env.DEBUG_BING_SEARCH === 'true';
     console.error(`[SearchEngine] BING: Parsing HTML with length: ${html.length}`);
     
     const $ = cheerio.load(html);
@@ -1107,7 +1109,7 @@ export class SearchEngine {
     return averageScore;
   }
 
-  private async validateBrowserHealth(browser: any): Promise<boolean> {
+  private async validateBrowserHealth(browser: Browser): Promise<boolean> {
     const debugBrowsers = process.env.DEBUG_BROWSER_LIFECYCLE === 'true';
     
     try {
@@ -1131,7 +1133,7 @@ export class SearchEngine {
     }
   }
 
-  private async handleBrowserError(error: any, engineName: string, attemptNumber: number = 1): Promise<void> {
+  private async handleBrowserError(error: unknown, engineName: string, attemptNumber: number = 1): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`[SearchEngine] ${engineName} browser error (attempt ${attemptNumber}): ${errorMessage}`);
     

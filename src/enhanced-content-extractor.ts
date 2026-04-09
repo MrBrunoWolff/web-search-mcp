@@ -5,6 +5,15 @@ import { ContentExtractionOptions, SearchResult } from './types.js';
 import { cleanText, getWordCount, getContentPreview, generateTimestamp, isPdfUrl } from './utils.js';
 import { BrowserPool } from './browser-pool.js';
 
+type PermissionQueryParameters = Parameters<Permissions['query']>[0];
+
+interface ChromeWindow extends Window {
+  chrome?: {
+    app?: unknown;
+    runtime?: unknown;
+  };
+}
+
 export class EnhancedContentExtractor {
   private readonly defaultTimeout: number;
   private readonly maxContentLength: number;
@@ -52,7 +61,9 @@ export class EnhancedContentExtractor {
           return content;
         } catch (browserError) {
           console.error(`[EnhancedContentExtractor] Browser extraction also failed:`, browserError);
-          throw new Error(`Both axios and browser extraction failed for ${url}`);
+          throw new Error(`Both axios and browser extraction failed for ${url}`, {
+            cause: browserError,
+          });
         }
       } else {
         throw error;
@@ -138,11 +149,11 @@ export class EnhancedContentExtractor {
         window.navigator.permissions.query = (parameters) => (
           parameters.name === 'notifications' ?
             Promise.resolve({ state: 'default' } as unknown as PermissionStatus) :
-            originalQuery(parameters)
+            originalQuery(parameters as PermissionQueryParameters)
         );
 
         // Remove automation indicators
-        const windowWithChrome = window as any;
+        const windowWithChrome = window as ChromeWindow;
         if (windowWithChrome.chrome) {
           delete windowWithChrome.chrome.app;
           delete windowWithChrome.chrome.runtime;
@@ -275,25 +286,33 @@ export class EnhancedContentExtractor {
     }
   }
 
-  private shouldUseBrowser(error: any, url: string): boolean {
+  private shouldUseBrowser(error: unknown, url: string): boolean {
+    const errorDetails = error as {
+      message?: string;
+      response?: {
+        status?: number;
+        data?: string;
+      };
+    };
+
     // Conditions where browser is likely to succeed where axios failed
     const indicators = [
       // HTTP status codes that suggest bot detection
-      error.response?.status === 403,
-      error.response?.status === 429,
-      error.response?.status === 503,
+      errorDetails.response?.status === 403,
+      errorDetails.response?.status === 429,
+      errorDetails.response?.status === 503,
       
       // Error messages suggesting JS requirement
-      error.message?.includes('timeout'),
-      error.message?.includes('Access denied'),
-      error.message?.includes('Forbidden'),
-      error.message?.includes('Low quality content detected'),
+      errorDetails.message?.includes('timeout'),
+      errorDetails.message?.includes('Access denied'),
+      errorDetails.message?.includes('Forbidden'),
+      errorDetails.message?.includes('Low quality content detected'),
       
       // Response content suggesting bot detection
-      error.response?.data?.includes('Please enable JavaScript'),
-      error.response?.data?.includes('captcha'),
-      error.response?.data?.includes('unusual traffic'),
-      error.response?.data?.includes('robot'),
+      errorDetails.response?.data?.includes('Please enable JavaScript'),
+      errorDetails.response?.data?.includes('captcha'),
+      errorDetails.response?.data?.includes('unusual traffic'),
+      errorDetails.response?.data?.includes('robot'),
       
       // Sites known to be JS-heavy
       url.includes('twitter.com'),

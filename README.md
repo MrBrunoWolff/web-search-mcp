@@ -112,6 +112,30 @@ mcpServers:
 - If `npm install` fails, try updating Node.js to version 18+ and npm to version 8+
 - If `npm run build` fails, ensure you have the latest Node.js version installed
 - For older Node.js versions, you may need to use an older release of this project
+- **LM Studio on Windows with WSL:** If LM Studio cannot find `node` or has trouble launching a WSL path, use `wsl.exe` as the command and pass the Linux paths in `args`:
+
+```json
+{
+  "mcpServers": {
+    "web-search": {
+      "command": "C:\\Windows\\System32\\wsl.exe",
+      "args": [
+        "-d",
+        "Ubuntu",
+        "/home/mrbru/.local/share/fnm/aliases/default/bin/node",
+        "/home/mrbru/personal/web-search-mcp/dist/index.js"
+      ]
+    }
+  }
+}
+```
+
+  Build the project first so that `dist/index.js` exists:
+
+```bash
+npm run build
+```
+
 - **Content Length Issues:** If you experience odd behavior due to content length limits, try setting `"MAX_CONTENT_LENGTH": "10000"`, or another value, in your `mcp.json` environment variables:
 
 ```json

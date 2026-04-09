@@ -79,7 +79,9 @@ export class ContentExtractor {
         }
       }
       
-      throw new Error(`Failed to extract content from ${url}: ${this.getSpecificErrorMessage(error)}`);
+      throw new Error(`Failed to extract content from ${url}: ${this.getSpecificErrorMessage(error)}`, {
+        cause: error,
+      });
     }
   }
 
