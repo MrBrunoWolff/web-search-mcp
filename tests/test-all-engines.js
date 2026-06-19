@@ -7,7 +7,10 @@
 
 import { SearchEngine } from '../dist/search-engine.js';
 
-async function testSearchEngine(query = 'javascript programming', numResults = 3) {
+async function testSearchEngine(
+  query = 'javascript programming',
+  numResults = 3
+) {
   console.log('🔍 Testing Web Search MCP Server - All Engines');
   console.log('===============================================');
   console.log(`Query: "${query}"`);
@@ -21,7 +24,7 @@ async function testSearchEngine(query = 'javascript programming', numResults = 3
     const result = await searchEngine.search({
       query,
       numResults,
-      timeout: 15000 // 15 second timeout
+      timeout: 15000, // 15 second timeout
     });
     const endTime = Date.now();
 
@@ -37,33 +40,37 @@ async function testSearchEngine(query = 'javascript programming', numResults = 3
 
     console.log('📋 Results:');
     console.log('===========');
-    
+
     result.results.forEach((item, index) => {
       console.log(`${index + 1}. ${item.title}`);
       console.log(`   🔗 ${item.url}`);
-      console.log(`   📝 ${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}`);
+      console.log(
+        `   📝 ${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}`
+      );
       console.log('');
     });
 
     // Validate results
-    const validResults = result.results.filter(r => 
-      r.title && 
-      r.title !== 'No title' && 
-      r.url && 
-      r.url.startsWith('http') &&
-      r.description &&
-      r.description !== 'No description available'
+    const validResults = result.results.filter(
+      r =>
+        r.title &&
+        r.title !== 'No title' &&
+        r.url &&
+        r.url.startsWith('http') &&
+        r.description &&
+        r.description !== 'No description available'
     );
 
-    console.log(`✅ Valid results: ${validResults.length}/${result.results.length}`);
-    
+    console.log(
+      `✅ Valid results: ${validResults.length}/${result.results.length}`
+    );
+
     if (validResults.length === 0) {
       console.log('❌ No valid results found!');
       return false;
     }
 
     return true;
-
   } catch (error) {
     console.error('❌ Search failed:', error.message);
     return false;
@@ -79,7 +86,7 @@ async function runTests() {
   const testQueries = [
     'javascript programming',
     'climate change effects',
-    'machine learning basics'
+    'machine learning basics',
   ];
 
   let passedTests = 0;
@@ -89,7 +96,7 @@ async function runTests() {
     const query = testQueries[i];
     console.log(`\n🔍 Test ${i + 1}/${totalTests}: "${query}"`);
     console.log('─'.repeat(50));
-    
+
     const success = await testSearchEngine(query, 5);
     if (success) {
       passedTests++;
@@ -97,7 +104,7 @@ async function runTests() {
     } else {
       console.log('❌ Test FAILED');
     }
-    
+
     if (i < testQueries.length - 1) {
       console.log('\n⏳ Waiting 2 seconds before next test...');
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -108,7 +115,7 @@ async function runTests() {
   console.log('===============');
   console.log(`Tests passed: ${passedTests}/${totalTests}`);
   console.log(`Success rate: ${Math.round((passedTests / totalTests) * 100)}%`);
-  
+
   if (passedTests === totalTests) {
     console.log('🎉 All tests passed!');
     process.exit(0);
